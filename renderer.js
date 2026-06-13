@@ -1,9 +1,5 @@
-let mode = 'clean';
-let isRecording = false;
-let recognition = null;
-let history = [];
-let settings = {};
-
+// State
+let mode = 'clean', isRecording = false, recognition = null, history = [], settings = {};
 const el = id => document.getElementById(id);
 
 (async () => {
@@ -14,8 +10,7 @@ const el = id => document.getElementById(id);
   el('defaultModeInput').value = settings.mode || 'clean';
   setMode(settings.mode || 'clean');
   window.electronAPI.onRecordingState(val => {
-    isRecording = val;
-    updateMicUI();
+    isRecording = val; updateMicUI();
     if (isRecording) startRecognition(); else stopRecognition();
   });
 })();
@@ -52,7 +47,7 @@ function startRecognition() {
       if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
       else interim += e.results[i][0].transcript;
     }
-    setStatus('🎙 ' + finalTranscript + interim, true);
+    setStatus('Listening: ' + finalTranscript + interim, true);
   };
   recognition.onerror = e => setStatus('Error: ' + e.error, false);
   recognition.onend = () => {
@@ -60,25 +55,22 @@ function startRecognition() {
     else setStatus('No speech detected. Try again.', false);
   };
   recognition.start();
-  setStatus('🎙 Listening...', true);
+  setStatus('Listening...', true);
 }
 
-function stopRecognition() {
-  if (recognition) { recognition.stop(); recognition = null; }
-}
+function stopRecognition() { if (recognition) { recognition.stop(); recognition = null; } }
 
 async function processWithDeepSeek(transcript) {
   if (!settings.apiKey) {
     el('outputBox').textContent = transcript;
-    setStatus('No API key — raw transcript shown. Add key in Settings.', false);
-    return;
+    setStatus('No API key — raw transcript shown. Add key in Settings.', false); return;
   }
   const lang = el('langSelect').value;
   const prompts = {
     clean:     'Remove filler words, fix punctuation and grammar. Return only the cleaned text:\n\n' + transcript,
-    polish:    'Rewrite the following in clear, neutral, plain language. Return only the rewritten text:\n\n' + transcript,
-    translate: 'Translate the following to ' + lang + '. Return only the translation:\n\n' + transcript,
-    all:       'Do the following in sequence: 1) Remove filler words and fix grammar. 2) Polish to clear neutral language. 3) Translate to ' + lang + '. Return only the final result:\n\n' + transcript
+    polish:    'Rewrite in clear, neutral, plain language. Return only the rewritten text:\n\n' + transcript,
+    translate: 'Translate to ' + lang + '. Return only the translation:\n\n' + transcript,
+    all:       'Do in sequence: 1) Remove fillers and fix grammar. 2) Polish to clear neutral language. 3) Translate to ' + lang + '. Return only the final result:\n\n' + transcript
   };
   setStatus('Processing with DeepSeek...', true);
   try {
@@ -123,8 +115,7 @@ function addToHistory(original, processed, m) {
 
 el('historyToggle').addEventListener('click', () => {
   if (!history.length) return;
-  const txt = history.map((h, i) => '[' + (i+1) + '] ' + h.time + ' ' + h.mode.toUpperCase() + '\n-> ' + h.processed).join('\n\n');
-  el('outputBox').textContent = txt;
+  el('outputBox').textContent = history.map((h, i) => '[' + (i+1) + '] ' + h.time + ' - ' + h.mode.toUpperCase() + '\n-> ' + h.processed).join('\n\n');
   setStatus('Showing ' + history.length + ' history entries', false);
 });
 
