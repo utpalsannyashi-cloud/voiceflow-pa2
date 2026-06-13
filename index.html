@@ -1,105 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>VoiceFlow PA-2</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:rgba(15,15,20,0.96);color:#f0f0f0;border-radius:16px;overflow:hidden;height:100vh;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,0.08)}
-  .titlebar{-webkit-app-region:drag;padding:12px 16px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07)}
-  .titlebar h1{font-size:13px;font-weight:600;color:#aaa;letter-spacing:0.5px}
-  .close-btn{-webkit-app-region:no-drag;width:14px;height:14px;background:#ff5f57;border-radius:50%;border:none;cursor:pointer}
-  .modes{display:flex;gap:4px;padding:10px 12px 6px}
-  .mode-btn{flex:1;padding:6px 4px;font-size:11px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#888;cursor:pointer;transition:all .2s;text-align:center}
-  .mode-btn.active{background:rgba(99,102,241,0.3);border-color:rgba(99,102,241,0.6);color:#c7d2fe}
-  .lang-row{display:flex;align-items:center;gap:8px;padding:4px 12px 8px;font-size:11px;color:#666}
-  .lang-row select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#aaa;border-radius:6px;padding:3px 6px;font-size:11px}
-  .mic-area{display:flex;flex-direction:column;align-items:center;padding:20px 0 16px}
-  .mic-btn{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:28px;transition:all .2s;box-shadow:0 4px 20px rgba(99,102,241,0.4)}
-  .mic-btn.recording{background:linear-gradient(135deg,#ef4444,#f97316);animation:pulse 1s infinite}
-  @keyframes pulse{0%,100%{box-shadow:0 4px 24px rgba(239,68,68,0.5)}50%{box-shadow:0 4px 40px rgba(239,68,68,0.8)}}
-  .mic-label{margin-top:10px;font-size:12px;color:#555}
-  .hotkey-hint{font-size:10px;color:#444;margin-top:4px}
-  .status{margin:0 12px;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:12px;color:#666;min-height:36px;border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center}
-  .status.active{color:#a5b4fc;border-color:rgba(99,102,241,0.3)}
-  .output-area{flex:1;margin:8px 12px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
-  .output-box{flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px;font-size:13px;color:#e0e0e0;line-height:1.6;overflow-y:auto;min-height:80px}
-  .output-box:empty::before{content:'Your processed text appears here...';color:#333}
-  .actions{display:flex;gap:6px}
-  .action-btn{flex:1;padding:8px;border-radius:8px;border:none;font-size:12px;cursor:pointer;transition:all .2s;font-weight:500}
-  .btn-inject{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white}
-  .btn-copy{background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.1)}
-  .btn-clear{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2);flex:0;padding:8px 12px}
-  .history-toggle{padding:6px 12px;font-size:11px;color:#444;cursor:pointer;text-align:center;border-top:1px solid rgba(255,255,255,0.05)}
-  .settings-panel{display:none;position:absolute;inset:0;background:rgba(10,10,15,0.97);border-radius:16px;padding:16px;z-index:10;flex-direction:column;gap:12px;overflow-y:auto}
-  .settings-panel.open{display:flex}
-  .settings-panel h2{font-size:14px;color:#aaa}
-  .field{display:flex;flex-direction:column;gap:4px}
-  .field label{font-size:11px;color:#666}
-  .field input,.field select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px}
-  .settings-actions{display:flex;gap:8px;margin-top:8px}
-  .btn-save{flex:1;padding:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px}
-  .btn-cancel{padding:10px 16px;background:rgba(255,255,255,0.07);color:#888;border:none;border-radius:8px;cursor:pointer;font-size:13px}
-  .gear-btn{-webkit-app-region:no-drag;background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:0 2px}
-</style>
-</head>
-<body>
-<div class="titlebar">
-  <h1>VoiceFlow PA-2</h1>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button class="gear-btn" id="gearBtn">⚙️</button>
-    <button class="close-btn" id="closeBtn"></button>
-  </div>
-</div>
-<div class="modes">
-  <button class="mode-btn active" data-mode="clean">🧹 Clean</button>
-  <button class="mode-btn" data-mode="polish">✨ Polish</button>
-  <button class="mode-btn" data-mode="translate">🌐 Translate</button>
-  <button class="mode-btn" data-mode="all">🔄 All</button>
-</div>
-<div class="lang-row">
-  <span>Translate to:</span>
-  <select id="langSelect">
-    <option value="english">English</option>
-    <option value="hindi">Hindi</option>
-    <option value="french">French</option>
-    <option value="arabic">Arabic</option>
-    <option value="chinese">Chinese</option>
-  </select>
-</div>
-<div class="mic-area">
-  <button class="mic-btn" id="micBtn">🎤</button>
-  <div class="mic-label" id="micLabel">Click or use hotkey to record</div>
-  <div class="hotkey-hint" id="hotkeyHint">Ctrl+Shift+Space</div>
-</div>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>VoiceFlow PA-2</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:rgba(15,15,20,.96);color:#f0f0f0;border-radius:16px;overflow:hidden;height:100vh;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.08)}
+.titlebar{-webkit-app-region:drag;padding:12px 16px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.07)}
+.titlebar h1{font-size:13px;font-weight:600;color:#aaa}
+.close-btn{-webkit-app-region:no-drag;width:14px;height:14px;background:#ff5f57;border-radius:50%;border:none;cursor:pointer}
+.gear-btn{-webkit-app-region:no-drag;background:none;border:none;color:#555;cursor:pointer;font-size:13px;padding:0 2px}
+.modes{display:flex;gap:4px;padding:10px 12px 6px}
+.mode-btn{flex:1;padding:6px 4px;font-size:11px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#888;cursor:pointer;text-align:center}
+.mode-btn.active{background:rgba(99,102,241,.3);border-color:rgba(99,102,241,.6);color:#c7d2fe}
+.lang-row{display:flex;align-items:center;gap:8px;padding:4px 12px 8px;font-size:11px;color:#666}
+.lang-row select{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#aaa;border-radius:6px;padding:3px 6px;font-size:11px}
+.mic-area{display:flex;flex-direction:column;align-items:center;padding:20px 0 16px}
+.mic-btn{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;cursor:pointer;font-size:28px;box-shadow:0 4px 20px rgba(99,102,241,.4);display:flex;align-items:center;justify-content:center}
+.mic-btn.recording{background:linear-gradient(135deg,#ef4444,#f97316);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 4px 24px rgba(239,68,68,.5)}50%{box-shadow:0 4px 40px rgba(239,68,68,.8)}}
+.mic-label{margin-top:10px;font-size:12px;color:#555}.hotkey-hint{font-size:10px;color:#444;margin-top:4px}
+.status{margin:0 12px;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:8px;font-size:12px;color:#666;min-height:36px;border:1px solid rgba(255,255,255,.06)}
+.status.active{color:#a5b4fc;border-color:rgba(99,102,241,.3)}
+.output-area{flex:1;margin:8px 12px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.output-box{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px;font-size:13px;color:#e0e0e0;line-height:1.6;overflow-y:auto;min-height:80px}
+.output-box:empty::before{content:'Your processed text appears here...';color:#333}
+.actions{display:flex;gap:6px}
+.action-btn{flex:1;padding:8px;border-radius:8px;border:none;font-size:12px;cursor:pointer;font-weight:500}
+.btn-inject{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white}
+.btn-copy{background:rgba(255,255,255,.08);color:#aaa;border:1px solid rgba(255,255,255,.1)}
+.btn-clear{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);flex:0;padding:8px 12px}
+.history-toggle{padding:6px 12px;font-size:11px;color:#444;cursor:pointer;text-align:center;border-top:1px solid rgba(255,255,255,.05)}
+.settings-panel{display:none;position:absolute;inset:0;background:rgba(10,10,15,.97);border-radius:16px;padding:16px;z-index:10;flex-direction:column;gap:12px;overflow-y:auto}
+.settings-panel.open{display:flex}.settings-panel h2{font-size:14px;color:#aaa}
+.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:11px;color:#666}
+.field input,.field select{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px}
+.settings-actions{display:flex;gap:8px;margin-top:8px}
+.btn-save{flex:1;padding:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px}
+.btn-cancel{padding:10px 16px;background:rgba(255,255,255,.07);color:#888;border:none;border-radius:8px;cursor:pointer;font-size:13px}
+</style></head><body>
+<div class="titlebar"><h1>VoiceFlow PA-2</h1><div style="display:flex;gap:8px;align-items:center"><button class="gear-btn" id="gearBtn">&#9881;</button><button class="close-btn" id="closeBtn"></button></div></div>
+<div class="modes"><button class="mode-btn active" data-mode="clean">Clean</button><button class="mode-btn" data-mode="polish">Polish</button><button class="mode-btn" data-mode="translate">Translate</button><button class="mode-btn" data-mode="all">All</button></div>
+<div class="lang-row"><span>Translate to:</span><select id="langSelect"><option value="english">English</option><option value="hindi">Hindi</option><option value="french">French</option><option value="arabic">Arabic</option><option value="chinese">Chinese</option></select></div>
+<div class="mic-area"><button class="mic-btn" id="micBtn">&#127908;</button><div class="mic-label" id="micLabel">Click or use hotkey to record</div><div class="hotkey-hint" id="hotkeyHint">Ctrl+Shift+Space</div></div>
 <div class="status" id="status">Ready</div>
-<div class="output-area">
-  <div class="output-box" id="outputBox" contenteditable="true"></div>
-  <div class="actions">
-    <button class="action-btn btn-inject" id="injectBtn">⚡ Inject into App</button>
-    <button class="action-btn btn-copy" id="copyBtn">📋 Copy</button>
-    <button class="action-btn btn-clear" id="clearBtn">✕</button>
-  </div>
-</div>
-<div class="history-toggle" id="historyToggle">📜 History (0)</div>
-<div class="settings-panel" id="settingsPanel">
-  <h2>⚙️ Settings</h2>
-  <div class="field"><label>DeepSeek API Key</label><input type="password" id="apiKeyInput" placeholder="sk-..."/></div>
-  <div class="field"><label>Global Hotkey</label><input type="text" id="hotkeyInput" placeholder="CommandOrControl+Shift+Space"/></div>
-  <div class="field"><label>Default Mode</label>
-    <select id="defaultModeInput">
-      <option value="clean">🧹 Clean Up</option>
-      <option value="polish">✨ Polish</option>
-      <option value="translate">🌐 Translate</option>
-      <option value="all">🔄 All</option>
-    </select>
-  </div>
-  <div class="settings-actions">
-    <button class="btn-save" id="saveSettingsBtn">Save</button>
-    <button class="btn-cancel" id="cancelSettingsBtn">Cancel</button>
-  </div>
-</div>
-<script src="renderer.js"></script>
-</body>
-</html>
+<div class="output-area"><div class="output-box" id="outputBox" contenteditable="true"></div>
+<div class="actions"><button class="action-btn btn-inject" id="injectBtn">Inject into App</button><button class="action-btn btn-copy" id="copyBtn">Copy</button><button class="action-btn btn-clear" id="clearBtn">X</button></div></div>
+<div class="history-toggle" id="historyToggle">History (0)</div>
+<div class="settings-panel" id="settingsPanel"><h2>Settings</h2>
+<div class="field"><label>DeepSeek API Key</label><input type="password" id="apiKeyInput" placeholder="sk-..."/></div>
+<div class="field"><label>Global Hotkey</label><input type="text" id="hotkeyInput" placeholder="CommandOrControl+Shift+Space"/></div>
+<div class="field"><label>Default Mode</label><select id="defaultModeInput"><option value="clean">Clean Up</option><option value="polish">Polish</option><option value="translate">Translate</option><option value="all">All</option></select></div>
+<div class="settings-actions"><button class="btn-save" id="saveSettingsBtn">Save</button><button class="btn-cancel" id="cancelSettingsBtn">Cancel</button></div></div>
+<script src="renderer.js"></script></body></html>
