@@ -20,19 +20,8 @@
   "build": {
     "appId": "com.pa2.voiceflow",
     "productName": "VoiceFlow PA-2",
-    "mac": {
-      "category": "public.app-category.productivity",
-      "target": "dmg"
-    },
-    "win": {
-      "target": "nsis"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "index.html",
-      "renderer.js",
-      "assets/**"
-    ]
+    "mac": { "category": "public.app-category.productivity", "target": "dmg" },
+    "win": { "target": "nsis" },
+    "files": ["main.js","preload.js","index.html","renderer.js","assets/**"]
   }
 }
