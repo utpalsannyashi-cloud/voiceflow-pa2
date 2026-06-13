@@ -34,18 +34,9 @@ function injectText(text) {
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 420,
-    height: 620,
-    resizable: false,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false
-    }
+    width: 420, height: 620, resizable: false,
+    frame: false, transparent: true, alwaysOnTop: true, skipTaskbar: true,
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   win.loadFile('index.html');
   win.on('blur', () => { if (!isRecording) win.hide(); });
@@ -72,8 +63,7 @@ function registerHotkey(hotkey) {
 
 function toggleRecording() {
   isRecording = !isRecording;
-  win.show();
-  win.focus();
+  win.show(); win.focus();
   win.webContents.send('recording-state', isRecording);
 }
 
@@ -84,10 +74,7 @@ ipcMain.handle('hide-window', () => win.hide());
 ipcMain.handle('toggle-recording', () => { toggleRecording(); return isRecording; });
 
 app.whenReady().then(() => {
-  loadSettings();
-  createWindow();
-  createTray();
-  registerHotkey();
+  loadSettings(); createWindow(); createTray(); registerHotkey();
   if (process.platform === 'darwin') app.dock?.hide();
 });
 
